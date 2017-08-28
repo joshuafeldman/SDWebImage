@@ -223,8 +223,9 @@ typedef NSMutableDictionary<NSString *, id> SDCallbacksDictionary;
 }
 
 - (void)reset {
+    __weak typeof(self) weakSelf = self;
     dispatch_barrier_async(self.barrierQueue, ^{
-        [self.callbackBlocks removeAllObjects];
+        [weakSelf.callbackBlocks removeAllObjects];
     });
     self.dataTask = nil;
     self.imageData = nil;
@@ -272,8 +273,7 @@ didReceiveResponse:(NSURLResponse *)response
         dispatch_async(dispatch_get_main_queue(), ^{
             [[NSNotificationCenter defaultCenter] postNotificationName:SDWebImageDownloadReceiveResponseNotification object:weakSelf];
         });
-    }
-    else {
+    } else {
         NSUInteger code = ((NSHTTPURLResponse *)response).statusCode;
         
         //This is the case when server returns '304 Not Modified'. It means that remote image is not changed.
@@ -377,7 +377,9 @@ didReceiveResponse:(NSURLResponse *)response
             }
         }
 
-        CFRelease(imageSource);
+        if (imageSource) {
+            CFRelease(imageSource);
+        }
     }
 
     for (SDWebImageDownloaderProgressBlock progressBlock in [self callbacksForKey:kProgressCallbackKey]) {
